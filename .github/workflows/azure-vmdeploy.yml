@@ -3,7 +3,7 @@ name: Build and Deploy to Azure VM
 on:
   push:
     branches:
-      - develop  # Ajusta si despliegas desde otra rama
+      - develop
 
 jobs:
   build-and-deploy:
@@ -11,40 +11,45 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
-          node-version: '22'  # Usa tu versión deseada de Node.js
+          node-version: '22'
+          cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Build the project
         run: npm run build
 
-      # Copia los archivos construidos al VM usando SCP
       - name: Copy files to VM
-        uses: appleboy/scp-action@master
+        uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.VM_IP }}
           username: ${{ secrets.VM_USERNAME }}
           key: ${{ secrets.VM_PRIVATE_KEY }}
-          port: ${{ secrets.VM_PORT }}  # Opcional si usas el puerto 22
-          source: "."
-          target: "/home/${{ secrets.VM_USERNAME }}/form-app"  # Ajusta la ruta
+          port: ${{ secrets.VM_PORT || 22 }}
+          source: "dist/"  # Asume que el build va a dist/
+          target: "/var/www/form-app"
+          rm: true  # Borra archivos antiguos
 
-      # Ejecuta comandos remotos via SSH para instalar dependencias y reiniciar
       - name: Execute remote SSH commands
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v0.1.8
         with:
           host: ${{ secrets.VM_IP }}
           username: ${{ secrets.VM_USERNAME }}
           key: ${{ secrets.VM_PRIVATE_KEY }}
-          port: ${{ secrets.VM_PORT }}
+          port: ${{ secrets.VM_PORT || 22 }}
           script: |
-            cd ~/form-app  # Corregido para coincidir con el target del SCP
-            npm install 
-            # Si usas PM2:
-            pm2 restart app || pm2 start server.js --name app
+            cd /var/www/form-app
+            npm ci --production
+            # Reinicia PM2 o el servicio
+            if pm2 describe app >/dev/null 2>&1; then
+              pm2 reload app --update-env
+            else
+              pm2 start server.js --name app
+            fi
+            pm2 save
