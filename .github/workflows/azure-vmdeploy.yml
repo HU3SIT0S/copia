@@ -3,7 +3,7 @@ name: Build and Deploy to Azure VM
 on:
   push:
     branches:
-      - develop  # Ajusta si despliegas desde otra rama
+      - develop
 
 jobs:
   build-and-deploy:
@@ -16,7 +16,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '22'  # Usa tu versión deseada de Node.js
+          node-version: '22'
 
       - name: Install dependencies
         run: npm install
@@ -24,18 +24,16 @@ jobs:
       - name: Build the project
         run: npm run build
 
-      # Copia los archivos construidos al VM usando SCP
       - name: Copy files to VM
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.VM_IP }}
           username: ${{ secrets.VM_USERNAME }}
           key: ${{ secrets.VM_PRIVATE_KEY }}
-          port: ${{ secrets.VM_PORT }}  # Opcional si usas el puerto 22
+          port: ${{ secrets.VM_PORT }}
           source: "."
-          target: "/home/${{ secrets.VM_USERNAME }}/form-app"  # Ajusta la ruta
+          target: "/home/${{ secrets.VM_USERNAME }}/app"
 
-      # Ejecuta comandos remotos via SSH para instalar dependencias y reiniciar
       - name: Execute remote SSH commands
         uses: appleboy/ssh-action@master
         with:
@@ -44,7 +42,6 @@ jobs:
           key: ${{ secrets.VM_PRIVATE_KEY }}
           port: ${{ secrets.VM_PORT }}
           script: |
-            cd ~/form-app  # Corregido para coincidir con el target del SCP
-            npm install 
-            # Si usas PM2:
+            cd ~/app
+            npm install --production
             pm2 restart app || pm2 start server.js --name app

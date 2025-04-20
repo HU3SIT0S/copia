@@ -161,8 +161,8 @@ Envía un pull request.
 ---
 
 ## **Autor**
-- Tu Nombre: Diller Chaguala
-- GitHub: `@dillerchaguala`.
+- Tu Nombre: Jhon Montoya.
+- GitHub: `@HU3SIT0S`.
 ---
 
 ## **Agradecimientos**
