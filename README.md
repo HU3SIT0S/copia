@@ -161,7 +161,7 @@ Envía un pull request.
 ---
 
 ## **Autor**
-- Tu Nombre: Jhon Montoya
+- Tu Nombre: Jhon Montoya.
 - GitHub: `@HU3SIT0S`.
 ---
 
